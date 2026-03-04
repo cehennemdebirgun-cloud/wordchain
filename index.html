@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WordChain</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+body{background:#EFF6FF;min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding-bottom:80px}
+.header{background:linear-gradient(135deg,#3B82F6,#1E40AF);padding:24px 20px;border-radius:0 0 24px 24px;color:#fff}
+.card{background:#fff;border-radius:16px;padding:16px;margin:12px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.btn{background:linear-gradient(135deg,#3B82F6,#1E40AF);color:#fff;border:none;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer;font-size:15px;width:100%}
+.btn-outline{background:transparent;color:#3B82F6;border:2px solid #3B82F6;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:14px}
+input{padding:12px 16px;border-radius:10px;border:2px solid #DBEAFE;font-size:15px;outline:none;width:100%;margin-bottom:8px}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #DBEAFE;display:flex;z-index:100}
+.nav-btn{flex:1;padding:10px 4px 8px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:#6b7280}
+.nav-btn.active{color:#3B82F6;font-weight:700}
+.word-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #DBEAFE}
+.quiz-opt{background:#fff;border:2px solid #DBEAFE;border-radius:14px;padding:14px 20px;cursor:pointer;text-align:left;font-weight:600;font-size:16px;width:100%;margin-bottom:8px}
+.quiz-opt.correct{background:#D1FAE5;border-color:#10B981;color:#065F46}
+.quiz-opt.wrong{background:#FEE2E2;border-color:#EF4444;color:#991B1B}
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.page{display:none}.page.active{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-card{background:#fff;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.progress{height:8px;background:#DBEAFE;border-radius:4px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,#3B82F6,#1E40AF);border-radius:4px;transition:width 0.5s}
+.alert{padding:12px 16px;border-radius:12px;margin-bottom:8px;font-size:14px;font-weight:600}
+.game-area{position:relative;min-height:400px;background:#f8fafc;border-radius:20px;padding:20px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <div class="header">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <p style="font-size:13px;opacity:0.85">Merhaba!</p>
+        <h1 style="font-size:26px;font-weight:800">WordChain</h1>
+        <p id="h-level" style="font-size:13px;opacity:0.8">Seviye 1 - 0 puan</p>
+      </div>
+      <div style="text-align:center;background:rgba(255,255,255,0.2);border-radius:16px;padding:10px 16px">
+        <p id="h-streak" style="font-size:28px;font-weight:800">🔥0</p>
+        <p style="font-size:11px;opacity:0.9">Gun Serisi</p>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;opacity:0.9;margin-bottom:6px">
+        <span>Bugunki Ilerleme</span><span id="h-prog-txt">0%</span>
+      </div>
+      <div class="progress"><div id="h-prog" class="progress-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div style="padding:12px 0">
+    <div class="card" style="background:#EFF6FF;border:1px solid #DBEAFE">
+      <p id="tip" style="color:#3B82F6;font-weight:600;font-size:14px;text-align:center"></p>
+    </div>
+    <div id="status-card" class="card">
+      <p id="status-label" style="font-weight:700;font-size:15px;margin-bottom:10px"></p>
+      <div class="grid2">
+        <div style="background:rgba(255,255,255,0.6);border-radius:10px;padding:10px;text-align:center">
+          <p style="font-size:11px">Kelime</p>
+          <p id="w-stat" style="font-size:20px;font-weight:800;margin:4px 0">0/5</p>
+          <div class="progress"><div id="w-prog" class="progress-bar" style="width:0%"></div></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.6);border-radius:10px;padding:10px;text-align:center">
+          <p style="font-size:11px">Quiz</p>
+          <p id="q-stat" style="font-size:20px;font-weight:800;margin:4px 0">0/10</p>
+          <div class="progress"><div id="q-prog" class="progress-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="background:#FFFBEB;border:1px solid #FCD34D">
+      <p style="font-weight:700;color:#92400E;font-size:14px;margin-bottom:8px">Hatirlatmalar</p>
+      <div id="reminders" style="color:#92400E;font-size:13px;line-height:2"></div>
+    </div>
+    <div style="padding:0 16px">
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:10px">Hizli Basla</h2>
+      <div class="grid2" style="margin-bottom:12px">
+        <button onclick="startQuiz('enToTr')" style="background:#3B82F614;border:2px solid #3B82F625;border-radius:14px;padding:14px 10px;cursor:pointer;text-align:center">
+          <div style="font-size:28px">🎯</div><p style="margin:6px 0 0;font-weight:700;font-size:13px">Quiz Baslat</p>
+        </button>
+        <button onclick="startQuiz('voice')" style="background:#F59E0B14;border:2px solid #F59E0B25;border-radius:14px;padding:14px 10px;cursor:pointer;text-align:center">
+          <div style="font-size:28px">🔊</div><p style="margin:6px 0 0;font-weight:700;font-size:13px">Sesli Quiz</p>
+        </button>
+        <button onclick="startQuiz('trToEn')" style="background:#8B5CF614;border:2px solid #8B5CF625;border-radius:14px;padding:14px 10px;cursor:pointer;text-align:center">
+          <div style="font-size:28px">📝</div><p style="margin:6px 0 0;font-weight:700;font-size:13px">TR-EN Quiz</p>
+        </button>
+        <button onclick="startGame('balloon')" style="background:#EF444414;border:2px solid #EF444425;border-radius:14px;padding:14px 10px;cursor:pointer;text-align:center">
+          <div style="font-size:28px">🎈</div><p style="margin:6px 0 0;font-weight:700;font-size:13px">Balon Oyunu</p>
+        </button>
+      </div>
+    </div>
+    <div style="padding:0 16px">
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:10px">Son Kelimeler</h2>
+      <div class="card" style="margin:0">
+        <div id="recent-words"></div>
+        <button class="btn-outline" onclick="showPage('words')" style="width:100%;margin-top:10px">Tum Kelimeleri Gor</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WORDS -->
+<div id="page-words" class="page">
+  <div style="padding:20px 16px">
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:16px">Kelimeler</h1>
+    <div class="card">
+      <h3 style="color:#3B82F6;margin-bottom:12px">Yeni Kelime Ekle</h3>
+      <input id="new-en" placeholder="Ingilizce...">
+      <input id="new-tr" placeholder="Turkce...">
+      <button class="btn" onclick="addWord()">Ekle</button>
+      <div id="add-msg" style="margin-top:8px"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span id="word-count" style="font-weight:700"></span>
+      <button class="btn-outline" onclick="toggleWords()">Tumunu Gor</button>
+    </div>
+    <div id="word-list" class="card" style="margin:0"></div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="page-quiz-menu" class="page">
+  <div style="padding:20px 16px">
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:16px">Quiz ve Oyunlar</h1>
+    <div class="card">
+      <h3 style="color:#3B82F6;margin-bottom:12px">Quiz Turleri</h3>
+      <button onclick="startQuiz('enToTr')" style="background:#3B82F618;border:2px solid #3B82F630;border-radius:14px;padding:14px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🇬🇧</span><div><p style="font-weight:700;margin:0">EN - TR</p><p style="font-size:13px;color:#6b7280;margin:0">Ingilizce'den Turkce'ye</p></div>
+      </button>
+      <button onclick="startQuiz('trToEn')" style="background:#8B5CF618;border:2px solid #8B5CF630;border-radius:14px;padding:14px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🇹🇷</span><div><p style="font-weight:700;margin:0">TR - EN</p><p style="font-size:13px;color:#6b7280;margin:0">Turkce'den Ingilizce'ye</p></div>
+      </button>
+      <button onclick="startQuiz('voice')" style="background:#F59E0B18;border:2px solid #F59E0B30;border-radius:14px;padding:14px;cursor:pointer;text-align:left;width:100%;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🔊</span><div><p style="font-weight:700;margin:0">Sesli Quiz</p><p style="font-size:13px;color:#6b7280;margin:0">Telaffuzu duy, bul</p></div>
+      </button>
+    </div>
+    <div class="card">
+      <h3 style="color:#3B82F6;margin-bottom:12px">Oyunlar</h3>
+      <button onclick="startGame('balloon')" style="background:#EF444418;border:2px solid #EF444430;border-radius:14px;padding:14px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🎈</span><div><p style="font-weight:700;margin:0">Balon Patlatma</p><p style="font-size:13px;color:#6b7280;margin:0">Turkce'sini yaz, balon patla!</p></div>
+      </button>
+      <button onclick="startGame('match')" style="background:#10B98118;border:2px solid #10B98130;border-radius:14px;padding:14px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🔗</span><div><p style="font-weight:700;margin:0">Eslestirme</p><p style="font-size:13px;color:#6b7280;margin:0">EN-TR eslestir</p></div>
+      </button>
+      <button onclick="startGame('hangman')" style="background:#8B5CF618;border:2px solid #8B5CF630;border-radius:14px;padding:14px;cursor:pointer;text-align:left;width:100%;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">💀</span><div><p style="font-weight:700;margin:0">Adam Asmaca</p><p style="font-size:13px;color:#6b7280;margin:0">Harfleri tahmin et!</p></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ ACTIVE -->
+<div id="page-quiz" class="page">
+  <div style="padding:20px 16px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button onclick="showPage('quiz-menu')" style="background:#DBEAFE;border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;font-size:18px;color:#3B82F6">←</button>
+      <div style="flex:1">
+        <div class="progress"><div id="quiz-prog" class="progress-bar" style="width:0%"></div></div>
+        <p id="quiz-score-txt" style="font-size:12px;color:#6b7280;margin:4px 0 0">0/0 dogru</p>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;padding:28px">
+      <div id="quiz-question"></div>
+    </div>
+    <div id="quiz-options" style="margin-top:8px"></div>
+    <div id="quiz-feedback" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="page-stats" class="page">
+  <div style="padding:20px 16px">
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:16px">Istatistikler</h1>
+    <div class="grid2" id="stats-grid" style="margin-bottom:12px"></div>
+    <div class="card">
+      <h3 style="color:#3B82F6;margin-top:0">Seviye Ilerlemesi</h3>
+      <div class="progress" style="margin-top:8px"><div id="level-prog" class="progress-bar"></div></div>
+      <p id="level-txt" style="font-size:12px;color:#6b7280;margin:6px 0 0"></p>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="page-settings" class="page">
+  <div style="padding:20px 16px">
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:16px">Ayarlar</h1>
+    <div class="card">
+      <h3 style="color:#3B82F6;margin-top:0">Program Ayarlari</h3>
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-weight:600">Gunluk Kelime</span><span id="dw-val" style="font-weight:800;color:#3B82F6">5</span>
+        </div>
+        <input type="range" min="1" max="20" value="5" id="daily-words" oninput="updateSettings()" style="width:100%;accent-color:#3B82F6">
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-weight:600">Gunluk Quiz</span><span id="dq-val" style="font-weight:800;color:#3B82F6">10</span>
+        </div>
+        <input type="range" min="5" max="50" value="10" id="daily-quiz" oninput="updateSettings()" style="width:100%;accent-color:#3B82F6">
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#3B82F6;margin-top:0">Ses Secimi</h3>
+      <div style="display:flex;gap:10px">
+        <button id="voice-f" onclick="setVoice('female')" style="flex:1;padding:12px;border-radius:12px;border:2px solid #3B82F6;background:#DBEAFE;font-weight:700;cursor:pointer">Kadin</button>
+        <button id="voice-m" onclick="setVoice('male')" style="flex:1;padding:12px;border-radius:12px;border:2px solid #e5e7eb;background:#fff;font-weight:700;cursor:pointer">Erkek</button>
+      </div>
+      <button onclick="speak('Hello! Welcome to WordChain!')" class="btn-outline" style="width:100%;margin-top:10px">Sesi Test Et</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="page-game" class="page">
+  <div style="padding:20px 16px">
+    <div id="game-container"></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('home')" id="nav-home"><span style="font-size:20px">🏠</span>Ana</button>
+  <button class="nav-btn" onclick="showPage('words')" id="nav-words"><span style="font-size:20px">📚</span>Kelime</button>
+  <button class="nav-btn" onclick="showPage('quiz-menu')" id="nav-quiz-menu"><span style="font-size:20px">🎮</span>Quiz</button>
+  <button class="nav-btn" onclick="showPage('settings')" id="nav-settings"><span style="font-size:20px">⚙️</span>Ayarlar</button>
+  <button class="nav-btn" onclick="showPage('stats')" id="nav-stats"><span style="font-size:20px">📊</span>Istatistik</button>
+</nav>
+
+</div>
+
+<script>
+// DATA
+let state = JSON.parse(localStorage.getItem('wordchain') || 'null') || {
+  words: [
+    {id:1,en:"apple",tr:"elma",err:0,ok:0,seen:null},
+    {id:2,en:"book",tr:"kitap",err:0,ok:0,seen:null},
+    {id:3,en:"car",tr:"araba",err:0,ok:0,seen:null},
+    {id:4,en:"door",tr:"kapi",err:0,ok:0,seen:null},
+    {id:5,en:"earth",tr:"dunya",err:0,ok:0,seen:null},
+    {id:6,en:"fire",tr:"ates",err:0,ok:0,seen:null},
+    {id:7,en:"garden",tr:"bahce",err:0,ok:0,seen:null},
+    {id:8,en:"house",tr:"ev",err:0,ok:0,seen:null},
+    {id:9,en:"island",tr:"ada",err:0,ok:0,seen:null},
+    {id:10,en:"journey",tr:"yolculuk",err:0,ok:0,seen:null},
+    {id:11,en:"king",tr:"kral",err:0,ok:0,seen:null},
+    {id:12,en:"light",tr:"isik",err:0,ok:0,seen:null},
+    {id:13,en:"moon",tr:"ay",err:0,ok:0,seen:null},
+    {id:14,en:"night",tr:"gece",err:0,ok:0,seen:null},
+    {id:15,en:"ocean",tr:"okyanus",err:0,ok:0,seen:null}
+  ],
+  settings:{dailyWords:5,dailyQuiz:10,voiceGender:"female"},
+  streak:{current:0,longest:0,lastDate:null},
+  points:0,
+  stats:{totalQuiz:0,correct:0,totalWords:15},
+  dailyLog:{},
+  nextId:16
+};
+
+const TIPS = [
+  "Her gun bir adim, her adim bir zafer!",
+  "Dil ogrenmek bir maraton, devam et!",
+  "Harika gidiyorsun! Zinciri kirmayin!",
+  "Kucuk adimlar buyuk basarilar getirir!"
+];
+
+function save() { localStorage.setItem('wordchain', JSON.stringify(state)); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function todayLog() { return state.dailyLog[today()] || {words:0,quiz:0}; }
+function level() { return Math.floor(state.points/200)+1; }
+function shuffle(a) { return [...a].sort(()=>Math.random()-0.5); }
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; u.rate = 0.85;
+  window.speechSynthesis.speak(u);
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const nb = document.getElementById('nav-'+name);
+  if (nb) nb.classList.add('active');
+  if (name==='home') updateHome();
+  if (name==='words') updateWords();
+  if (name==='stats') updateStats();
+}
+
+function updateHome() {
+  const tl = todayLog();
+  const dw = state.settings.dailyWords;
+  const dq = state.settings.dailyQuiz;
+  document.getElementById('h-level').textContent = 'Seviye '+level()+' - '+state.points+' puan';
+  document.getElementById('h-streak').textContent = '🔥'+state.streak.current;
+  document.getElementById('tip').textContent = TIPS[Math.floor(Math.random()*TIPS.length)];
+  const prog = Math.min(100, Math.round(((tl.words/dw)+(tl.quiz/dq))/2*100));
+  document.getElementById('h-prog').style.width = prog+'%';
+  document.getElementById('h-prog-txt').textContent = prog+'%';
+  document.getElementById('w-stat').textContent = tl.words+'/'+dw;
+  document.getElementById('q-stat').textContent = tl.quiz+'/'+dq;
+  document.getElementById('w-prog').style.width = Math.min(100,(tl.words/dw)*100)+'%';
+  document.getElementById('q-prog').style.width = Math.min(100,(tl.quiz/dq)*100)+'%';
+  const done = tl.words>=dw && tl.quiz>=dq;
+  const half = tl.words>0 || tl.quiz>0;
+  const sc = done ? {bg:'#D1FAE5',c:'#065F46',t:'Gunu Tamamladin!'} : half ? {bg:'#FEF3C7',c:'#92400E',t:'Devam Et!'} : {bg:'#FEE2E2',c:'#991B1B',t:'Bugun Henuz Baslamadin'};
+  const card = document.getElementById('status-card');
+  card.style.background = sc.bg; card.style.border = '1px solid '+sc.c+'44';
+  document.getElementById('status-label').style.color = sc.c;
+  document.getElementById('status-label').textContent = sc.t;
+  let rem = '';
+  if (tl.words<dw) rem += '<div>• Bugun '+(dw-tl.words)+' kelime daha ekle</div>';
+  if (tl.quiz<dq)  rem += '<div>• '+(dq-tl.quiz)+' quiz sorusu kaldi</div>';
+  const hard = state.words.filter(w=>w.err>2).length;
+  if (hard>0) rem += '<div>• '+hard+' zor kelimen var, tekrar et!</div>';
+  document.getElementById('reminders').innerHTML = rem;
+  const rw = document.getElementById('recent-words');
+  rw.innerHTML = state.words.slice(-5).reverse().map(w=>`
+    <div class="word-item">
+      <div><strong>${w.en}</strong> = <span style="color:#6b7280">${w.tr}</span></div>
+      <button onclick="speak('${w.en}')" style="background:#DBEAFE;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px">🔊</button>
+    </div>`).join('');
+}
+
+function updateWords() {
+  document.getElementById('word-count').textContent = state.words.length+' kelime';
+  const list = document.getElementById('word-list');
+  list.innerHTML = state.words.slice(-10).reverse().map(w=>`
+    <div class="word-item">
+      <div>
+        <strong style="font-size:16px">${w.en}</strong>
+        <p style="margin:2px 0 0;color:#6b7280;font-size:14px">${w.tr}</p>
+        <p style="margin:2px 0 0;font-size:11px;color:${w.err>2?'#EF4444':'#10B981'}">OK:${w.ok} Hata:${w.err}</p>
+      </div>
+      <button onclick="speak('${w.en}')" style="background:#DBEAFE;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:18px">🔊</button>
+    </div>`).join('');
+}
+
+function toggleWords() {
+  const list = document.getElementById('word-list');
+  list.innerHTML = state.words.map(w=>`
+    <div class="word-item">
+      <div>
+        <strong style="font-size:16px">${w.en}</strong>
+        <p style="margin:2px 0 0;color:#6b7280;font-size:14px">${w.tr}</p>
+        <p style="margin:2px 0 0;font-size:11px;color:${w.err>2?'#EF4444':'#10B981'}">OK:${w.ok} Hata:${w.err}</p>
+      </div>
+      <button onclick="speak('${w.en}')" style="background:#DBEAFE;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:18px">🔊</button>
+    </div>`).join('');
+}
+
+function addWord() {
+  const en = document.getElementById('new-en').value.trim().toLowerCase();
+  const tr = document.getElementById('new-tr').value.trim();
+  const msg = document.getElementById('add-msg');
+  if (!en || !tr) { msg.innerHTML='<div class="alert" style="background:#FEE2E2;color:#991B1B">Her iki alani doldur!</div>'; return; }
+  if (state.words.find(w=>w.en===en)) { msg.innerHTML='<div class="alert" style="background:#FEF3C7;color:#92400E">Bu kelime zaten var!</div>'; return; }
+  state.words.push({id:state.nextId++,en,tr,err:0,ok:0,seen:null});
+  const tl = todayLog();
+  state.dailyLog[today()] = {...tl, words: tl.words+1};
+  state.stats.totalWords++;
+  save();
+  msg.innerHTML='<div class="alert" style="background:#D1FAE5;color:#065F46">'+en+' eklendi!</div>';
+  document.getElementById('new-en').value='';
+  document.getElementById('new-tr').value='';
+  setTimeout(()=>msg.innerHTML='',2500);
+  updateWords();
+}
+
+function updateStats() {
+  const acc = state.stats.totalQuiz>0 ? Math.round(state.stats.correct/state.stats.totalQuiz*100) : 0;
+  const items = [
+    ['Toplam Kelime',state.stats.totalWords],
+    ['Quiz Cozuldu',state.stats.totalQuiz],
+    ['Dogru Cevap',state.stats.correct],
+    ['Basari %',acc+'%'],
+    ['Gun Serisi',state.streak.current+' gun'],
+    ['En Uzun',state.streak.longest+' gun'],
+    ['Toplam Puan',state.points],
+    ['Seviye',level()]
+  ];
+  document.getElementById('stats-grid').innerHTML = items.map(([l,v])=>`
+    <div class="stat-card"><div style="font-size:22px;font-weight:800;color:#3B82F6">${v}</div><div style="font-size:12px;color:#6b7280">${l}</div></div>`).join('');
+  const lp = (state.points%200)/2;
+  document.getElementById('level-prog').style.width = lp+'%';
+  document.getElementById('level-txt').textContent = (state.points%200)+'/200 puan - Seviye '+(level()+1);
+}
+
+function updateSettings() {
+  state.settings.dailyWords = +document.getElementById('daily-words').value;
+  state.settings.dailyQuiz  = +document.getElementById('daily-quiz').value;
+  document.getElementById('dw-val').textContent = state.settings.dailyWords;
+  document.getElementById('dq-val').textContent = state.settings.dailyQuiz;
+  save();
+}
+
+function setVoice(g) {
+  state.settings.voiceGender = g;
+  document.getElementById('voice-f').style.border = '2px solid '+(g==='female'?'#3B82F6':'#e5e7eb');
+  document.getElementById('voice-f').style.background = g==='female'?'#DBEAFE':'#fff';
+  document.getElementById('voice-m').style.border = '2px solid '+(g==='male'?'#3B82F6':'#e5e7eb');
+  document.getElementById('voice-m').style.background = g==='male'?'#DBEAFE':'#fff';
+  save();
+}
+
+// QUIZ
+let quiz = {type:null,word:null,opts:[],correct:0,total:0,answered:false};
+
+function startQuiz(type) {
+  if (state.words.length < 4) { alert('En az 4 kelime gerekli!'); return; }
+  quiz.type = type; quiz.correct = 0; quiz.total = 0;
+  showPage('quiz');
+  nextQuiz();
+}
+
+function nextQuiz() {
+  const sorted = [...state.words].sort((a,b)=>(b.err*3-b.ok)-(a.err*3-a.ok));
+  const word = sorted[Math.floor(Math.random()*Math.min(5,sorted.length))];
+  const wrong = shuffle(state.words.filter(w=>w.id!==word.id)).slice(0,3);
+  quiz.word = word; quiz.opts = shuffle([word,...wrong]); quiz.answered = false;
+  const prog = (quiz.total%10)*10;
+  document.getElementById('quiz-prog').style.width = prog+'%';
+  document.getElementById('quiz-score-txt').textContent = quiz.correct+'/'+quiz.total+' dogru';
+  const qDiv = document.getElementById('quiz-question');
+  if (quiz.type==='voice') {
+    qDiv.innerHTML = '<p style="color:#6b7280;margin-bottom:12px">Sesi dinle, dogru kelimeyi bul:</p><button onclick="speak(\''+word.en+'\')" style="background:linear-gradient(135deg,#3B82F6,#1E40AF);color:#fff;border:none;border-radius:50%;width:80px;height:80px;font-size:32px;cursor:pointer">🔊</button>';
+    speak(word.en);
+  } else {
+    const q = quiz.type==='trToEn' ? word.tr : word.en;
+    qDiv.innerHTML = '<p style="color:#6b7280;font-size:13px;margin-bottom:8px">'+(quiz.type==='trToEn'?'Ingilizce karsiligini bul:':'Turkce karsiligini bul:')+'</p><h2 style="font-size:38px;font-weight:800;color:#3B82F6;margin:12px 0 0">'+q+'</h2>';
+  }
+  const optsDiv = document.getElementById('quiz-options');
+  optsDiv.innerHTML = quiz.opts.map(opt=>{
+    const label = quiz.type==='trToEn' ? opt.en : opt.tr;
+    return '<button class="quiz-opt" onclick="answerQuiz('+opt.id+')">'+label+'</button>';
+  }).join('');
+  document.getElementById('quiz-feedback').innerHTML = '';
+}
+
+function answerQuiz(id) {
+  if (quiz.answered) return;
+  quiz.answered = true;
+  const correct = id === quiz.word.id;
+  quiz.total++;
+  if (correct) { quiz.correct++; state.points+=5; }
+  const tl = todayLog();
+  state.dailyLog[today()] = {...tl, quiz: tl.quiz+1};
+  state.stats.totalQuiz++;
+  if (correct) state.stats.correct++;
+  state.words = state.words.map(w=>w.id===quiz.word.id?{...w,err:correct?w.err:w.err+1,ok:correct?w.ok+1:w.ok,seen:Date.now()}:w);
+  save();
+  document.querySelectorAll('.quiz-opt').forEach(btn=>{
+    const label = btn.textContent;
+    const isCorrect = quiz.type==='trToEn' ? label===quiz.word.en : label===quiz.word.tr;
+    if (isCorrect) btn.classList.add('correct');
+    else if (btn.textContent === (quiz.type==='trToEn'?state.words.find(w=>w.id===id)?.en:state.words.find(w=>w.id===id)?.tr)) btn.classList.add('wrong');
+  });
+  const fb = document.getElementById('quiz-feedback');
+  fb.innerHTML = '<div class="alert" style="background:'+(correct?'#D1FAE5':'#FEE2E2')+';color:'+(correct?'#065F46':'#991B1B')+';text-align:center;margin-bottom:8px">'+(correct?'Harika! +5 puan':'Cevap: '+quiz.word.en+' = '+quiz.word.tr)+'</div><button class="btn" onclick="nextQuiz()">Sonraki Soru</button>';
+}
+
+// BALLOON GAME
+let balloon = {word:null,size:30,timer:null,score:0,lives:3,over:false};
+
+function startGame(type) {
+  showPage('game');
+  if (type==='balloon') startBalloon();
+  else if (type==='match') startMatch();
+  else if (type==='hangman') startHangman();
+}
+
+function startBalloon() {
+  balloon = {word:null,size:30,timer:null,score:0,lives:3,over:false};
+  renderBalloon();
+  nextBalloon();
+}
+
+function renderBalloon() {
+  document.getElementById('game-container').innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+      <span style="font-weight:700;color:#3B82F6;font-size:18px">Balon Patlatma</span>
+      <span style="font-weight:700">Hayat:${balloon.lives} Puan:${balloon.score}</span>
+      <button onclick="showPage('quiz-menu')" style="background:none;border:none;cursor:pointer;color:#999;font-size:22px">X</button>
+    </div>
+    <p style="text-align:center;color:#666;margin-bottom:8px">Turkce karsiligini yaz:</p>
+    <div style="height:220px;display:flex;align-items:center;justify-content:center">
+      <div id="balloon-el" style="display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;background:#FF6B6B;transition:all 0.25s"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+      <input id="balloon-ans" placeholder="Turkce..." onkeydown="if(event.key==='Enter')checkBalloon()" style="padding:12px 18px;border-radius:12px;border:2px solid #3B82F6;font-size:16px;outline:none;width:180px">
+      <button onclick="checkBalloon()" style="background:#3B82F6;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-size:16px;cursor:pointer;font-weight:700">OK</button>
+    </div>`;
+}
+
+function nextBalloon() {
+  if (balloon.over) return;
+  const w = state.words[Math.floor(Math.random()*state.words.length)];
+  balloon.word = w; balloon.size = 30;
+  clearInterval(balloon.timer);
+  balloon.timer = setInterval(()=>{
+    balloon.size += 1.5;
+    const el = document.getElementById('balloon-el');
+    if (!el) { clearInterval(balloon.timer); return; }
+    el.style.width = balloon.size*2+'px';
+    el.style.height = balloon.size*2.2+'px';
+    el.style.fontSize = Math.max(14,balloon.size/4)+'px';
+    el.textContent = w.en;
+    if (balloon.size>=110) {
+      clearInterval(balloon.timer);
+      el.textContent = 'BOOM!'; el.style.background='#999';
+      balloon.lives--;
+      if (balloon.lives<=0) {
+        balloon.over=true;
+        setTimeout(()=>{ document.getElementById('game-container').innerHTML='<div style="text-align:center;padding:40px"><p style="font-size:64px">💥</p><h2>Oyun Bitti!</h2><p style="font-size:26px;font-weight:800">Skor: '+balloon.score+'</p><button class="btn" onclick="showPage(\'quiz-menu\')">Ana Menu</button></div>'; },1000);
+      } else setTimeout(()=>{ renderBalloon(); nextBalloon(); },1200);
+    }
+  },250);
+  const el = document.getElementById('balloon-el');
+  if (el) { el.style.width='60px'; el.style.height='66px'; el.style.fontSize='14px'; el.textContent=w.en; }
+}
+
+function checkBalloon() {
+  const ans = document.getElementById('balloon-ans');
+  if (!ans || !balloon.word) return;
+  if (ans.value.trim().toLowerCase()===balloon.word.tr.toLowerCase()) {
+    clearInterval(balloon.timer);
+    balloon.score+=10;
+    document.getElementById('balloon-el').textContent='OK!';
+    document.getElementById('balloon-el').style.background='#10B981';
+    ans.value='';
+    setTimeout(()=>{ renderBalloon(); nextBalloon(); },800);
+  } else ans.value='';
+}
+
+// MATCH GAME
+function startMatch() {
+  const pool = shuffle(state.words).slice(0,6);
+  const left = shuffle(pool.map(w=>({id:w.id,text:w.en})));
+  const right = shuffle(pool.map(w=>({id:w.id,text:w.tr})));
+  let selL=null, matched=[];
+  const render = ()=>{
+    document.getElementById('game-container').innerHTML=`
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+        <span style="font-weight:700;color:#3B82F6;font-size:18px">Eslestirme</span>
+        <button onclick="showPage('quiz-menu')" style="background:none;border:none;cursor:pointer;color:#999;font-size:22px">X</button>
+      </div>
+      <p style="text-align:center;color:#666;margin-bottom:14px">Ingilizce - Turkce eslestir</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div id="left-col"></div><div id="right-col"></div>
+      </div>`;
+    const lc=document.getElementById('left-col'), rc=document.getElementById('right-col');
+    left.forEach(w=>{
+      const b=document.createElement('button');
+      const dm=matched.includes(w.id), sel=selL===w.id;
+      b.textContent=w.text;
+      b.style.cssText='padding:12px 14px;border-radius:12px;font-weight:600;font-size:14px;width:100%;margin-bottom:8px;cursor:'+(dm?'default':'pointer')+';border:2px solid '+(dm?'#10B981':sel?'#3B82F6':'#e5e7eb')+';background:'+(dm?'#D1FAE5':sel?'#DBEAFE':'#fff');
+      if (!dm) b.onclick=()=>{ selL=w.id; render(); };
+      lc.appendChild(b);
+    });
+    right.forEach(w=>{
+      const b=document.createElement('button');
+      const dm=matched.includes(w.id);
+      b.textContent=w.text;
+      b.style.cssText='padding:12px 14px;border-radius:12px;font-weight:600;font-size:14px;width:100%;margin-bottom:8px;cursor:'+(dm?'default':'pointer')+';border:2px solid '+(dm?'#10B981':'#e5e7eb')+';background:'+(dm?'#D1FAE5':'#fff');
+      if (!dm) b.onclick=()=>{
+        if (!selL) return;
+        if (selL===w.id) { matched.push(w.id); selL=null; render(); if(matched.length===pool.length) setTimeout(()=>alert('Tebrikler! Hepsini eslestirdin!'),300); }
+        else { selL=null; render(); }
+      };
+      rc.appendChild(b);
+    });
+  };
+  render();
+}
+
+// HANGMAN
+function startHangman() {
+  let word = state.words[Math.floor(Math.random()*state.words.length)];
+  let guessed=[], wrong=0;
+  const render=()=>{
+    const display=word.en.split('').map(c=>guessed.includes(c)||c===' '?c:'_');
+    const won=display.join('')===word.en, lost=wrong>=6;
+    document.getElementById('game-container').innerHTML=`
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+        <span style="font-weight:700;color:#3B82F6;font-size:18px">Adam Asmaca</span>
+        <span style="color:#EF4444;font-weight:700">Hata:${wrong}/6</span>
+        <button onclick="showPage('quiz-menu')" style="background:none;border:none;cursor:pointer;color:#999;font-size:22px">X</button>
+      </div>
+      <p style="text-align:center;color:#666">Ipucu: <strong>${word.tr}</strong></p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0">
+        ${display.map(c=>'<div style="width:28px;border-bottom:3px solid #3B82F6;text-align:center;font-size:22px;font-weight:700;color:#3B82F6;min-height:32px">'+(c==='_'?'':c)+'</div>').join('')}
+      </div>
+      ${(won||lost)?'<div style="padding:14px;border-radius:12px;background:'+(won?'#D1FAE5':'#FEE2E2')+';text-align:center;margin-bottom:14px"><p style="font-weight:700;font-size:18px;color:'+(won?'#065F46':'#991B1B')+';margin:0">'+(won?'Tebrikler!':'Cevap: '+word.en)+'</p><button onclick="startHangman()" style="margin-top:8px;padding:8px 22px;background:#3B82F6;color:#fff;border:none;border-radius:10px;cursor:pointer">Sonraki</button></div>':''}
+      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">
+        ${'abcdefghijklmnopqrstuvwxyz'.split('').map(l=>{
+          const used=guessed.includes(l), correct=word.en.includes(l);
+          return '<button '+((!used&&!won&&!lost)?'onclick="guessLetter(\''+l+'\')"':'disabled')+' style="width:34px;height:34px;border-radius:8px;border:2px solid '+(used?(correct?'#10B981':'#EF4444'):'#3B82F6')+';background:'+(used?(correct?'#D1FAE5':'#FEE2E2'):'#fff')+';color:'+(used?(correct?'#065F46':'#991B1B'):'#3B82F6')+';font-weight:700;font-size:13px;cursor:pointer;opacity:'+(used?0.6:1)+'">'+l+'</button>';
+        }).join('')}
+      </div>`;
+    window._hangmanGuess=(l)=>{ if(guessed.includes(l)||won||lost)return; guessed.push(l); if(!word.en.includes(l))wrong++; render(); };
+  };
+  window.guessLetter=(l)=>{ if(guessed.includes(l))return; guessed.push(l); if(!word.en.includes(l))wrong++; render(); };
+  render();
+}
+
+// INIT
+updateHome();
+document.getElementById('dw-val').textContent = state.settings.dailyWords;
+document.getElementById('dq-val').textContent = state.settings.dailyQuiz;
+document.getElementById('daily-words').value = state.settings.dailyWords;
+document.getElementById('daily-quiz').value = state.settings.dailyQuiz;
+</script>
+</body>
+</html>
